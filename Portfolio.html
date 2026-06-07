@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TXD // Digital_Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #050505;
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --text-main: #e0e0e0;
+            --text-muted: #666;
+            --glass-bg: rgba(10, 10, 12, 0.85);
+            --glass-border: rgba(0, 243, 255, 0.2);
+            --sidebar-width: 280px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--neon-purple); border-radius: 4px; }
+
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Space Grotesk', sans-serif; overflow-x: hidden; display: flex; }
+
+        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.12; }
+
+        /* ====== SIDEBAR ====== */
+        nav.sidebar {
+            position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
+            background: rgba(5, 5, 5, 0.95); border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; z-index: 100;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+        }
+        
+        .sidebar-header { padding: 40px 30px; border-bottom: 1px solid #222; }
+        .logo { font-size: 26px; font-family: 'Fira Code', monospace; font-weight: 700; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); cursor: pointer; }
+        .logo::before { content: ">_ "; color: var(--neon-purple); }
+        .sys-status { font-family: 'Fira Code', monospace; color: #0f0; margin-top: 15px; font-size: 13px; opacity: 0.8;}
+
+        .nav-links { list-style: none; margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .nav-btn {
+            width: 100%; text-align: left; background: transparent; border: none;
+            color: var(--text-muted); font-family: 'Fira Code', monospace; font-size: 18px; font-weight: 600;
+            padding: 20px 30px; cursor: pointer; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-left: 4px solid transparent; letter-spacing: 1px; outline: none;
+        }
+        
+        .nav-btn:hover { color: #fff; padding-left: 40px; background: rgba(255,255,255,0.02); }
+        .nav-btn.active {
+            color: var(--neon-blue); border-left: 4px solid var(--neon-blue);
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.1) 0%, transparent 100%);
+            text-shadow: 0 0 8px var(--neon-blue); padding-left: 40px;
+        }
+
+        .sidebar-footer { margin-top: auto; padding: 30px; font-family: 'Fira Code', monospace; font-size: 12px; color: #444; line-height: 1.6;}
+
+        /* ====== MAIN CONTENT ====== */
+        .content-wrapper {
+            margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width));
+            padding: 60px 5%; min-height: 100vh; position: relative;
+        }
+
+        .page { display: none; animation: fadePageIn 0.4s ease-out forwards; }
+        .page.active { display: block; }
+        @keyframes fadePageIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-header {
+            font-family: 'Fira Code', monospace; font-size: 30px; font-weight: 700; color: var(--neon-blue);
+            margin-bottom: 40px; border-left: 4px solid var(--neon-purple); padding-left: 15px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); text-transform: uppercase;
+        }
+
+       /* ====== INTRO (STYLE MỚI) ====== */
+        /* Phần Top: Hero Banner */
+        .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-top: 20px; min-height: 70vh;}
+        .hero-text-zone { flex: 1; }
+        .hero-greeting { font-family: 'Fira Code', monospace; font-size: 18px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+        .hero-title { font-size: 65px; font-weight: 700; color: #fff; line-height: 1.1; margin-bottom: 25px; }
+        .hero-title span { color: var(--neon-blue); text-shadow: 0 0 20px rgba(0,243,255,0.4); }
+        .hero-short-bio { font-size: 18px; color: #aaa; max-width: 550px; line-height: 1.6; margin-bottom: 40px; }
+        
+        .hero-social-btn { 
+            display: inline-flex; align-items: center; gap: 10px;
+            background: transparent; color: var(--neon-blue); font-family: 'Fira Code', monospace; font-size: 15px; font-weight: 600;
+            padding: 12px 25px; border: 1px solid var(--neon-blue); border-radius: 30px;
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; text-decoration: none;
+        }
+        .hero-social-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); }
+
+        /* Vòng tròn Avatar */
+        .hero-avatar-zone { flex: 0 0 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .hero-avatar-container { position: relative; width: 380px; height: 380px; display: flex; align-items: center; justify-content: center; }
+        .hero-avatar { width: 300px; height: 300px; border-radius: 50%; object-fit: cover; z-index: 2; border: 2px solid var(--glass-border); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
+        .hero-avatar-ring {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            border: 2px dashed var(--neon-purple); opacity: 0.6;
+            animation: rotateRing 15s linear infinite;
+        }
+        @keyframes rotateRing { 100% { transform: rotate(360deg); } }
+
+        /* Phần Thống kê (Stats) */
+        .stats-container { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 40px; border-top: 1px solid #222; }
+        .stat-item { display: flex; align-items: center; gap: 15px; }
+        .stat-num { font-size: 55px; font-weight: 700; color: #fff; }
+        .stat-text { font-size: 14px; color: var(--text-muted); text-transform: uppercase; font-family: 'Fira Code', monospace; line-height: 1.4;}
+
+        /* Báo hiệu cuộn xuống */
+        .scroll-indicator { text-align: center; margin-top: 60px; font-family: 'Fira Code', monospace; color: var(--text-muted); font-size: 12px; letter-spacing: 2px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+
+        /* ====== Phần Chi tiết: ZIG-ZAG + HOVER EXPAND IMAGE (SIÊU HIỆU ỨNG) ====== */
+        .hero-details { margin-top: 80px; padding-top: 80px; border-top: 1px dashed var(--neon-blue); position: relative; }
+        
+        .zigzag-container { position: relative; max-width: 1000px; margin: 0 auto; padding: 40px 0; }
+        
+        /* Trục ánh sáng ở giữa */
+        .zigzag-container::before {
+            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 2px; height: 100%; background: linear-gradient(to bottom, transparent, var(--neon-blue), var(--neon-purple), transparent);
+            box-shadow: 0 0 15px var(--neon-blue); z-index: 1;
+        }
+
+        .zig-card { 
+            position: relative; width: 45%; background: rgba(10, 15, 20, 0.7); backdrop-filter: blur(5px);
+            padding: 30px; border: 1px solid #333; border-radius: 8px; margin-bottom: 40px;
+            font-size: 16px; color: #d1d5db; line-height: 1.7; transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 2; display: flex; flex-direction: column;
+        }
+        
+        /* Chấm Node kết nối giữa dòng */
+        .zig-card::after {
+            content: ''; position: absolute; top: 35px; transform: translateY(-50%);
+            width: 20px; height: 20px; background: var(--bg-color); border: 4px solid var(--neon-blue);
+            border-radius: 50%; box-shadow: 0 0 15px var(--neon-blue); transition: 0.4s; z-index: 3;
+        }
+
+        /* Hộp chứa ảnh mặc định ẩn giấu */
+        .zig-img-box {
+            width: 100%; height: 0; opacity: 0; overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            border-radius: 4px; margin-top: 0; position: relative;
+        }
+        .zig-img-box img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: 0.3s; }
+        .zig-card:hover .zig-img-box img { opacity: 1; }
+
+        /* Thiết lập riêng cho Card Lẻ (Bên Trái) */
+        .zig-card:nth-child(odd) { left: 0; text-align: right; border-right: 3px solid var(--neon-blue); border-left: none; transform-origin: right center; }
+        .zig-card:nth-child(odd)::after { right: -36px; border-color: var(--neon-blue); }
+        .zig-card:nth-child(odd):hover { transform: translateX(-10px); border-color: var(--neon-blue); box-shadow: -10px 10px 30px rgba(0, 243, 255, 0.15); }
+        .zig-card:nth-child(odd):hover::after { background: var(--neon-blue); box-shadow: 0 0 25px var(--neon-blue); }
+        /* Lệnh bung ảnh card Trái */
+        .zig-card:nth-child(odd):hover .zig-img-box { height: 180px; opacity: 1; margin-top: 20px; border: 1px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+
+        /* Thiết lập riêng cho Card Chẵn (Bên Phải) */
+        .zig-card:nth-child(even) { left: 55%; text-align: left; border-left: 3px solid var(--neon-purple); border-right: none; transform-origin: left center; }
+        .zig-card:nth-child(even)::after { left: -36px; border-color: var(--neon-purple); box-shadow: 0 0 15px var(--neon-purple); }
+        .zig-card:nth-child(even):hover { transform: translateX(10px); border-color: var(--neon-purple); box-shadow: 10px 10px 30px rgba(188, 19, 254, 0.15); }
+        .zig-card:nth-child(even):hover::after { background: var(--neon-purple); box-shadow: 0 0 25px var(--neon-purple); }
+        /* Lệnh bung ảnh card Phải */
+        .zig-card:nth-child(even):hover .zig-img-box { height: 180px; opacity: 1; margin-top: 20px; border: 1px solid var(--neon-purple); box-shadow: 0 0 15px rgba(188, 19, 254, 0.2); }
+
+        .zig-title { font-family: 'Fira Code', monospace; display: block; margin-bottom: 15px; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .zig-card:nth-child(odd) .zig-title { color: var(--neon-blue); }
+        .zig-card:nth-child(even) .zig-title { color: var(--neon-purple); }
+        .zig-card strong { color: #fff; }
+        
+        /* Chấm Node kết nối */
+        .zig-card::after {
+            content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+            width: 20px; height: 20px; background: var(--bg-color); border: 4px solid var(--neon-blue);
+            border-radius: 50%; box-shadow: 0 0 15px var(--neon-blue); transition: 0.4s; z-index: 3;
+        }
+
+        /* Card nằm bên Trái */
+        .zig-card:nth-child(odd) { 
+            left: 0; text-align: right; border-right: 3px solid var(--neon-blue); border-left: none; 
+            transform-origin: right center;
+        }
+        .zig-card:nth-child(odd)::after { right: -36px; border-color: var(--neon-blue); }
+        .zig-card:nth-child(odd):hover { transform: translateX(-10px) scale(1.02); border-color: var(--neon-blue); box-shadow: -10px 10px 30px rgba(0, 243, 255, 0.15); }
+        .zig-card:nth-child(odd):hover::after { background: var(--neon-blue); box-shadow: 0 0 25px var(--neon-blue); }
+
+        /* Card nằm bên Phải */
+        .zig-card:nth-child(even) { 
+            left: 55%; text-align: left; border-left: 3px solid var(--neon-purple); border-right: none;
+            transform-origin: left center;
+        }
+        .zig-card:nth-child(even)::after { left: -36px; border-color: var(--neon-purple); box-shadow: 0 0 15px var(--neon-purple); }
+        .zig-card:nth-child(even):hover { transform: translateX(10px) scale(1.02); border-color: var(--neon-purple); box-shadow: 10px 10px 30px rgba(188, 19, 254, 0.15); }
+        .zig-card:nth-child(even):hover::after { background: var(--neon-purple); box-shadow: 0 0 25px var(--neon-purple); }
+
+        .zig-title { 
+            font-family: 'Fira Code', monospace; display: block; margin-bottom: 15px; font-size: 20px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .zig-card:nth-child(odd) .zig-title { color: var(--neon-blue); }
+        .zig-card:nth-child(even) .zig-title { color: var(--neon-purple); }
+        .zig-card strong { color: #fff; }
+
+        /* GRID */
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
+        .pod-card {
+            background: var(--glass-bg); border: 1px solid #333; padding: 30px;
+            cursor: pointer; transition: 0.3s; position: relative; border-radius: 4px;
+        }
+        .pod-card:hover { border-color: var(--neon-blue); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0, 243, 255, 0.1); }
+        .pod-id { font-family: 'Fira Code', monospace; color: var(--neon-purple); font-size: 14px; margin-bottom: 12px; }
+        .pod-card h3 { font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 15px; text-transform: uppercase; }
+        .pod-card p { font-size: 17px; color: #999; }
+
+        /* DETAIL VIEW */
+        #detail-view { display: none; }
+        .detail-box {
+            background: rgba(10, 10, 12, 0.95); border: 1px solid var(--glass-border);
+            padding: 50px; border-radius: 4px; position: relative;
+        }
+        .breadcrumb { font-family: 'Fira Code', monospace; color: var(--text-muted); margin-bottom: 20px; font-size: 14px;}
+        .breadcrumb span { color: var(--neon-blue); }
+        #detail-title { font-size: 38px; font-weight: 700; color: #fff; margin-bottom: 15px; text-transform: uppercase; }
+        #detail-tags { font-family: 'Fira Code', monospace; color: var(--neon-purple); margin-bottom: 40px; font-size: 15px; }
+        
+        .detail-section { margin-bottom: 50px; }
+        .section-sub-title {
+            font-family: 'Fira Code', monospace; font-size: 18px; color: var(--neon-blue);
+            margin-bottom: 20px; letter-spacing: 1px; display: flex; align-items: center; gap: 10px;
+        }
+        .content-block {
+            background: rgba(20, 20, 25, 0.6); border-left: 3px solid var(--neon-purple);
+            padding: 25px; font-size: 18px; color: #e5e7eb; line-height: 1.7; border-radius: 0 4px 4px 0; text-align: justify;
+        }
+        .content-block strong { color: var(--neon-blue); }
+
+        /* CAROUSEL */
+        .carousel-wrapper {
+            position: relative; width: 100%; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); border: 1px solid #222; padding: 20px 0; border-radius: 4px;
+        }
+        .carousel-track {
+            display: flex; gap: 30px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; width: 100%; 
+            padding: 60px 15%; 
+        }
+        .carousel-track::-webkit-scrollbar { display: none; }
+        
+        .gallery-item {
+            flex: 0 0 70%; scroll-snap-align: center; background: #000; border: 1px solid #333; padding: 10px; cursor: pointer; 
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); position: relative;
+            filter: blur(1.5px) brightness(0.65) grayscale(20%); transform: scale(0.85); opacity: 0.85; pointer-events: none; 
+        }
+        .gallery-item.is-center { filter: blur(0) brightness(1) grayscale(0%); transform: scale(1); opacity: 1; pointer-events: auto; border-color: #555; z-index: 5; }
+        .carousel-track:has(.gallery-item.is-center:hover) .gallery-item:not(:hover) { transform: scale(0.75) translateY(10px); filter: blur(3px) brightness(0.4) grayscale(40%); opacity: 0.5; }
+        .carousel-track .gallery-item.is-center:hover { transform: scale(1.12) translateY(-15px); border-color: var(--neon-blue); box-shadow: 0 20px 50px rgba(0, 243, 255, 0.4); z-index: 10; }
+
+        .img-wrapper { width: 100%; height: 450px; overflow: hidden; position: relative; background: #111; }
+        .img-wrapper img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; transition: 0.3s; }
+        .gallery-item:hover img { opacity: 1; filter: contrast(1.1); }
+        .img-caption { font-family: 'Fira Code', monospace; font-size: 15px; color: #888; margin-top: 15px; text-align: center;}
+
+        /* BUTTONS */
+        .slider-btn { background: transparent; border: none; width: 60px; height: 60px; cursor: pointer; position: absolute; z-index: 20; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; align-items: center; justify-content: center; outline: none; }
+        .slider-btn::before { content: ''; width: 25px; height: 25px; border-top: 3px solid var(--neon-purple); border-right: 3px solid var(--neon-purple); transition: 0.3s; filter: drop-shadow(0 0 5px var(--neon-purple)); }
+        .prev-btn { left: 10px; } .prev-btn::before { transform: rotate(-135deg); } .prev-btn:hover { transform: translateX(-5px); }
+        .next-btn { right: 10px; } .next-btn::before { transform: rotate(45deg); } .next-btn:hover { transform: translateX(5px); }
+        .slider-btn:hover::before { border-color: var(--neon-blue); filter: drop-shadow(0 0 12px var(--neon-blue)); }
+        .slider-btn.hidden-btn { opacity: 0 !important; pointer-events: none !important; transform: scale(0.5); }
+
+        .file-zone { display: flex; align-items: center; justify-content: space-between; background: rgba(0, 243, 255, 0.03); border: 1px dashed rgba(0, 243, 255, 0.3); padding: 25px; border-radius: 4px; }
+        .file-meta { display: flex; align-items: center; gap: 20px; }
+        .file-icon { font-size: 35px; }
+        .file-name { font-family: 'Fira Code', monospace; font-size: 18px; color: #fff; }
+        .file-status { font-family: 'Fira Code', monospace; font-size: 13px; color: #0f0; margin-top: 5px; }
+
+        .nav-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid #222; }
+        .cyber-btn { background: transparent; color: var(--neon-blue); font-family: 'Fira Code', monospace; font-size: 15px; font-weight: 600; padding: 12px 25px; border: 1px solid var(--neon-blue); cursor: pointer; text-transform: uppercase; transition: 0.2s; outline: none;}
+        .cyber-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        .btn-main { border-color: var(--neon-purple); color: var(--neon-purple); }
+        .btn-main:hover { background: var(--neon-purple); color: #000; box-shadow: 0 0 15px var(--neon-purple); }
+        .btn-disabled { opacity: 0.2; pointer-events: none; border-color: #444; color: #444; }
+
+        /* SUMMARY */
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px;}
+        .log-box { background: rgba(0, 0, 0, 0.6); border: 1px solid #333; padding: 35px; border-radius: 4px; position: relative; }
+        .log-box::before { content: ''; position: absolute; top: -1px; left: -1px; width: 30px; height: 30px; border-top: 2px solid var(--neon-blue); border-left: 2px solid var(--neon-blue); }
+        .log-box h4 { font-family: 'Fira Code', monospace; color: var(--neon-blue); font-size: 20px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;}
+        .log-box p { font-size: 18px; color: #d1d5db; line-height: 1.7; margin-bottom: 15px; text-align: justify;}
+
+        /* LIGHTBOX */
+        #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
+        #lightbox.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        #lightbox-img { max-width: 90%; max-height: 80vh; border: 2px solid var(--neon-blue); box-shadow: 0 0 40px rgba(0,243,255,0.4); object-fit: contain; }
+        #lightbox-caption { font-family: 'Fira Code', monospace; color: var(--neon-blue); margin-top: 20px; font-size: 18px; text-shadow: 0 0 5px var(--neon-blue); }
+        .close-lightbox { position: absolute; top: 30px; right: 40px; font-family: 'Fira Code', monospace; color: #fff; font-size: 50px; cursor: pointer; transition: 0.2s; line-height: 1;}
+        .close-lightbox:hover { color: red; text-shadow: 0 0 10px red; }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix-canvas"></canvas>
+
+    <div id="lightbox">
+        <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+        <img id="lightbox-img" src="" alt="Zoomed Image">
+        <div id="lightbox-caption">SYS_CAPTION_LOADED</div>
+    </div>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">TXD</div>
+            <div class="sys-status">NODE: UET_K70</div>
+        </div>
+        
+        <ul class="nav-links">
+            <li><button class="nav-btn active" id="btn-intro" onclick="switchPage('page-intro', 'btn-intro')">_GIỚI THIỆU</button></li>
+            <li><button class="nav-btn" id="btn-projects" onclick="switchPage('page-projects', 'btn-projects')">_DỰ ÁN</button></li>
+            <li><button class="nav-btn" id="btn-summary" onclick="switchPage('page-summary', 'btn-summary')">_TỔNG KẾT</button></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            > ROOT: T.X.DUONG<br>
+            > MAJOR: ENGINEERING<br>
+            > Y: 2026 // V1.4.0
+        </div>
+    </nav>
+
+    <main class="content-wrapper">
+
+       <div id="page-intro" class="page active">
+            
+            <div class="hero-top">
+                <div class="hero-text-zone">
+                    <div class="hero-greeting">> Engineering Student_</div>
+                    <div class="hero-title">
+                        Hello, I'm <br>
+                        <span>Trịnh Xuân Dương</span>
+                    </div>
+                    <div class="hero-short-bio">
+                        Tân sinh viên K70 tại Đại học Công nghệ - ĐHQGHN (UET). Mình là người đam mê kiến trúc hệ thống, nghệ thuật thiết kế thuật toán và tối ưu hóa vận hành E-commerce.
+                    </div>
+                    <a href="#" class="hero-social-btn" onclick="switchPage('page-projects', 'btn-projects'); return false;">
+                        > KHÁM PHÁ MODULES
+                    </a>
+                </div>
+
+                <div class="hero-avatar-zone">
+                    <div class="hero-avatar-container">
+                        <div class="hero-avatar-ring"></div>
+                        <img src="https://github.com/Diin17/image/raw/main/HHA_3704.jpeg" alt="Luke" class="hero-avatar">
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-num">06</div>
+                    <div class="stat-text">Modules<br>Hoàn thành</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">K70</div>
+                    <div class="stat-text">Khóa sinh viên<br>UET - VNU</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">04</div>
+                    <div class="stat-text">Công cụ số<br>Thành thạo</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">100<span style="font-size: 30px; color: var(--neon-purple);">%</span></div>
+                    <div class="stat-text">Liêm chính<br>Học thuật</div>
+                </div>
+            </div>
+
+            <div class="scroll-indicator">
+                V CROLL DOWN FOR DETAILS V
+            </div>
+
+            <div class="hero-details">
+                <h2 class="section-header">> DEEP_DIVE</h2>
+                
+                <div class="zigzag-container">
+                    <div class="zig-card">
+                        <strong class="zig-title">[ _IDENTITY_KERNEL ]</strong>
+                        <div>Là một sinh viên chuyên ngành Kỹ thuật, mình luôn tìm kiếm mối liên kết giữa cấu trúc logic máy tính và thực tế đời sống. Nền tảng tư duy bóc tách vấn đề của mình được rèn luyện hàng ngày qua việc tối ưu giải thuật bằng ngôn ngữ <strong>C++ và Python</strong>. Không chỉ dừng lại ở lý thuyết giảng đường, mình còn tích cực tham gia vận hành thực chiến các dự án e-commerce đa nền tảng.</div>
+                        
+                        <div class="zig-img-box">
+                            <img src="https://raw.githubusercontent.com/Diin17/image/main/dhcn.png" alt="Identity Kernel Visual">
+                        </div>
+                    </div>
+
+                    <div class="zig-card">
+                        <strong class="zig-title">[ _VISION_&_LOGIC ]</strong>
+                        <div>Mục tiêu học tập cốt lõi của mình là làm chủ <strong>Tư duy máy tính (Computational Thinking)</strong> và biến nó thành một "hệ điều hành" tư duy tự thân. Tầm nhìn dài hạn của mình là kết hợp năng lực lập trình chính xác với sự linh hoạt của các công cụ AI để giải quyết các bài toán tự động hóa, scale-up mô hình kinh doanh cá nhân.</div>
+                        
+                        <div class="zig-img-box">
+                            <img src="https://raw.githubusercontent.com/Diin17/image/main/wigglestick.jpg" alt="Vision Logic Visual">
+                        </div>
+                    </div>
+
+                    <div class="zig-card">
+                        <strong class="zig-title">[ _PORTFOLIO_OBJECTIVE ]</strong>
+                        <div><strong>TXD</strong> được thiết kế như một "Digital Twin" (Bản sao số). Nơi đây hệ thống hóa kiến trúc thông tin trực quan, giúp mình thẩm định năng lực bản thân và chia sẻ dự án. Nó là minh chứng rõ nét nhất cho khả năng làm chủ công cụ số và nguyên tắc ứng xử đạo đức với <strong>Trí tuệ nhân tạo (AI)</strong> trong kỷ nguyên 4.0.</div>
+                        
+                        <div class="zig-img-box">
+                            <img src="https://raw.githubusercontent.com/Diin17/image/main/image.png" alt="Portfolio Objective Visual">
+                        </div>
+                    </div>
+                </div>
+            </div>    
+        </div>
+
+        <div id="page-projects" class="page">
+            <div id="grid-view">
+                <h2 class="section-header">> 06_MODULES</h2>
+                <div class="project-grid">
+                    <div class="pod-card" onclick="openProject(0)">
+                        <div class="pod-id">MODULE: 01 // ORGANIZE</div>
+                        <h3>Quản lý Hệ thống</h3>
+                        <p>Kiến trúc thư mục và quy tắc định danh.</p>
+                    </div>
+                    <div class="pod-card" onclick="openProject(1)">
+                        <div class="pod-id">MODULE: 02 // SEARCH</div>
+                        <h3>Khảo sát Dữ liệu</h3>
+                        <p>Toán tử cấp cao & thẩm định OSINT.</p>
+                    </div>
+                    <div class="pod-card" onclick="openProject(2)">
+                        <div class="pod-id">MODULE: 03 // PROMPT</div>
+                        <h3>Kỹ nghệ Prompt</h3>
+                        <p>Cấu trúc hóa lệnh điều khiển LLMs.</p>
+                    </div>
+                    <div class="pod-card" onclick="openProject(3)">
+                        <div class="pod-id">MODULE: 04 // SYNC</div>
+                        <h3>Hợp tác Trực tuyến</h3>
+                        <p>Quản trị dự án Agile trên Cloud.</p>
+                    </div>
+                    <div class="pod-card" onclick="openProject(4)">
+                        <div class="pod-id">MODULE: 05 // GENERATE</div>
+                        <h3>Sáng tạo AI</h3>
+                        <p>Sản xuất tài nguyên đa phương tiện.</p>
+                    </div>
+                    <div class="pod-card" onclick="openProject(5)">
+                        <div class="pod-id">MODULE: 06 // ETHICS</div>
+                        <h3>Đạo đức AI</h3>
+                        <p>Hệ thống Fact-check và liêm chính số.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="detail-view">
+                <div class="detail-box">
+                    <div class="breadcrumb">ROOT / MODULES / <span id="detail-id">FILE_00</span></div>
+                    <h1 id="detail-title">LOADING_MODULE...</h1>
+                    <div id="detail-tags">[ TAGS_CORE ]</div>
+                    
+                    <div id="detail-content"></div>
+
+                    <div class="nav-controls">
+                        <button id="btn-prev" class="cyber-btn" onclick="navigate(-1)"><< PREV_MODULE</button>
+                        <button class="cyber-btn btn-main" onclick="closeProject()">[ MAIN_DATABASE ]</button>
+                        <button id="btn-next" class="cyber-btn" onclick="navigate(1)">NEXT_MODULE >></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-summary" class="page">
+            <h2 class="section-header">> REFLECTION_&_SUMMARY</h2>
+            <div class="summary-grid">
+                
+                <div class="log-box">
+                    <h4>[+] TRẢI NGHIỆM & CẢM NHẬN (EXPERIENCE)</h4>
+                    <p>Việc xây dựng Digital Portfolio này không chỉ là hoàn thành một môn học, mà là một quá trình "lột xác" về tư duy số. Thay vì làm một báo cáo Word nhàm chán, việc tự tay hệ thống hóa 6 module bài tập lên một giao diện Terminal UI mang lại cảm giác làm chủ công nghệ thực sự.</p>
+                    <p>Hành trình này giúp mình nhận ra: Thế giới số cực kỳ hỗn loạn nếu không có quy tắc. Từ những file nháp rải rác, những luồng chat lộn xộn, giờ đây mọi thứ đã được đóng gói thành một "Bản sao số" (Digital Twin) minh chứng cho năng lực làm việc chuyên nghiệp của một sinh viên kỹ thuật.</p>
+                </div>
+
+                <div class="log-box">
+                    <h4>[*] KỸ NĂNG & KIẾN THỨC CỐT LÕI (CORE_SKILLS)</h4>
+                    <p>Khóa học đã trang bị cho mình một "hệ điều hành lõi" với 3 nhóm kỹ năng quan trọng nhất:</p>
+                    <p><strong>1. Tư duy Máy tính (Computational Thinking):</strong> Không chỉ dùng để viết code (C++, Python) mà còn để bóc tách mọi vấn đề phức tạp trong học tập và quản lý dự án.</p>
+                    <p><strong>2. Kỹ nghệ điều khiển AI (Prompt Engineering):</strong> Chuyển từ việc "hỏi vặt" sang việc thiết kế các luồng lệnh có cấu trúc (Framework C.R.E.A.T.E), ép AI tư duy logic theo từng bước (Chain-of-Thought).</p>
+                    <p><strong>3. Quản trị Không gian số:</strong> Làm chủ OSINT (tìm kiếm học thuật nâng cao), quản lý Agile/Kanban trên Notion và Version Control trên Google Docs.</p>
+                </div>
+
+                <div class="log-box">
+                    <h4>[!] ĐIỂM TÂM ĐẮC NHẤT (HIGHLIGHTS)</h4>
+                    <p>Điều khiến mình tự hào nhất là việc thiết lập thành công <strong>"Bức tường lửa đạo đức" (Ethics Firewall)</strong> và nguyên tắc <strong>Zero-Trust</strong> khi làm việc với Trí tuệ nhân tạo (Bài tập 6).</p>
+                    <p>Việc đối chiếu thực tế khả năng của Gemini và DALL-E 3 (Bài tập 5) đã chứng minh: AI có thể render hình ảnh siêu tốc, nhưng không thể hiểu logic của một lưu đồ thuật toán. Người nắm giữ tư duy cốt lõi (kiến thức Giải tích, Vật lý, Lập trình) và khả năng thẩm định chéo (Fact-check) vẫn bắt buộc phải là con người. Chúng ta sáng tạo bằng AI, nhưng kiểm soát nó bằng tư duy phản biện.</p>
+                </div>
+
+                <div class="log-box">
+                    <h4>[-] THÁCH THỨC & GIẢI PHÁP (CHALLENGES)</h4>
+                    <p>Thách thức lớn nhất trong suốt quá trình là <strong>sự cám dỗ của việc ỷ lại vào AI</strong> và <strong>xung đột dữ liệu (Data Conflict)</strong> khi làm việc nhóm.</p>
+                    <p><strong>Giải pháp:</strong> Mình đã siết chặt kỷ luật hệ thống. Với làm việc nhóm, mọi file đưa lên Drive đều phải tuân thủ nghiêm ngặt quy tắc định danh 3 cấp độ; mọi chỉnh sửa trên Docs phải qua chế độ <em>Suggesting</em>. Với AI, mình kiên quyết tự phác thảo logic (như tự viết vòng lặp For thay vì dùng hàm Reduce mà AI xúi giục) trước khi nhờ AI gỡ lỗi. Điều này giúp mình tận dụng tối đa tốc độ của máy móc mà không làm thui chột tư duy của bản thân.</p>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- CHUYỂN TRANG ---
+        function switchPage(pageId, btnId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.getElementById(btnId).classList.add('active');
+            if (pageId === 'page-projects') closeProject();
+            window.scrollTo(0, 0);
+        }
+
+        // --- DỮ LIỆU ĐƯỢC UPGRADE CHUẨN MỨC 4 ---
+        const projectsData = [
+            {
+                id: "FILE_01", 
+                title: "Thao tác quản trị hệ thống Tệp tin & Thư mục", 
+                tags: "DATA_ARCHIVE | DIR_STRUCT | LIFECYCLE",
+                summary: "Quản trị dữ liệu không chỉ là lưu trữ, mà là thiết lập một hệ sinh thái thông tin. Dự án này minh chứng cho tư duy tổ chức dữ liệu cục bộ thông qua việc xây dựng cây thư mục phân tầng (Hierarchical structure) và áp dụng các giao thức an toàn dữ liệu (Data Recovery). Toàn bộ quá trình từ khởi tạo, định tuyến (move), tái định danh (rename) đến sao lưu đều tuân thủ nguyên tắc tối ưu hóa truy xuất.",
+                process: [
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/%E1%BA%A2nh%20ch%E1%BB%A5p%20m%C3%A0n%20h%C3%ACnh%202026-06-07%20123807.png", // Lấy ảnh số 3 trong file Word
+                        caption: "Khởi tạo Root Directory: Áp dụng quy tắc định danh chuẩn hóa (ThucHanh_TrinhXuanDuong)." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/2baitap1.png", // Lấy ảnh số 5 trong file Word
+                        caption: "Version Control: Tái định danh tệp tin theo chuẩn PascalCase không dấu." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/3baitap1.png", // Lấy ảnh số 9 trong file Word
+                        caption: "Data Routing: Phân luồng dữ liệu thô vào các Sub-folder chuyên biệt." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/4baitap1.png", // Lấy ảnh số 12 trong file Word
+                        caption: "Disaster Recovery: Thực thi giao thức khôi phục dữ liệu từ phân vùng cách ly." 
+                    }
+                ],
+                fileName: "25022152_BaiTap1_FileManagement.docx", 
+                fileUrl: "https://raw.githubusercontent.com/Diin17/image/main/baitap1.docx" // Link tải file word thực tế của mày
+            },
+            {
+                id: "FILE_02", 
+                title: "Khảo sát & Thẩm định Dữ liệu Học thuật", 
+                tags: "DATA_MINING | OSINT | CRITICAL_THINKING",
+                summary: "Nghiên cứu ứng dụng Tư duy máy tính (Computational Thinking) trong lập trình thông qua việc khai thác các CSDL học thuật chuyên sâu (Google Scholar, Microsoft Academic). Quá trình tra cứu áp dụng phễu lọc thông tin nghiêm ngặt, ưu tiên các tổ chức uy tín (ACM, IEEE, MIT Press). Minh chứng cốt lõi là ma trận đánh giá 10 nguồn tài liệu , phân lớp độ tin cậy từ 'Rất cao' (các bài báo nền tảng định hình khái niệm) đến 'Trung bình' (nguồn mở thiếu peer-review), qua đó khẳng định tư duy phản biện sắc bén khi xử lý luồng dữ liệu lớn.",
+                process: [
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/1baitap2.png", // Ảnh tự chụp
+                        caption: "Thực thi cú pháp tra cứu nâng cao & thiết lập bộ lọc CSDL." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/2baitap2.png", // Chụp bảng trong file Word
+                        caption: "Ma trận thẩm định chéo 10 tài liệu (Dựa trên tác giả, trích dẫn, phản biện)." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/3baitap2.png", // Chụp phần IV trong file Word
+                        caption: "Báo cáo phân tích chiều sâu: Định vị độ tin cậy và rủi ro học thuật." 
+                    }
+                ],
+                fileName: "25022152_BaiTap2_AcademicSearch.docx", 
+                fileUrl: "https://raw.githubusercontent.com/Diin17/image/main/Baitap2.docx" // Link tải file word thực tế của mày
+            },
+            {
+                id: "FILE_03", 
+                title: "Kỹ nghệ Prompt cho Khối ngành Kỹ thuật", 
+                tags: "PROMPT_ENGINEERING | LLM_CONTROL | C.R.E.A.T.E",
+                summary: "Phát triển kỹ năng điều khiển các mô hình ngôn ngữ lớn (LLMs) hỗ trợ học tập chuyên ngành. Thực hiện thử nghiệm đối chiếu 3 cấp độ Prompt (Cơ bản, Cải tiến, Nâng cao) trên các bài toán cốt lõi: Vật lý Đại cương, Lập trình C++/Python và Giải tích. Bằng cách nhúng các kỹ thuật Role Prompting, Chain-of-Thought và Few-shot Examples, AI bị ép buộc phải xuất ra kết quả theo đúng cấu trúc sư phạm và luồng Tư duy máy tính. Kết xuất cuối cùng của dự án là bộ nguyên tắc C.R.E.A.T.E độc quyền (Context, Role, Expectation, Action, Template, Extra Constraints) giúp tối ưu hóa hoàn toàn hiệu suất giao tiếp với hệ thống.",
+                process: [
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/1baitap3.png", // Chụp màn hình ví dụ Vật lý Đại cương
+                        caption: "Áp dụng Role Prompting tóm tắt định luật Kirchhoff (Vật lý Đại cương)." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/2baitap3.png", // Chụp màn hình ví dụ Đệ quy C++/Python
+                        caption: "Dùng Chain-of-Thought giải thích Đệ quy C++/Python qua 4 bước tư duy thuật toán." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/3baitap3.png", // Chụp màn hình ví dụ Giải tích
+                        caption: "Kỹ thuật Few-shot Examples ép AI chuẩn hóa định dạng bài tập Giải tích." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/4baitap3.png", // Chụp đoạn đúc kết nguyên tắc C.R.E.A.T.E
+                        caption: "Hệ thống hóa bộ nguyên tắc C.R.E.A.T.E: Ma trận lệnh điều khiển LLMs." 
+                    }
+                ],
+                fileName: "25022152_BaiTap3_PromptEngineering.docx", 
+                fileUrl: "https://raw.githubusercontent.com/Diin17/image/main/BaiTap3.docx" // Link tải file thực tế của mày
+            },
+            {
+                id: "FILE_04", 
+                title: "Đồng bộ hóa & Quản trị Dự án Đám mây", 
+                tags: "CLOUD_SYNC | AGILE | WORKFLOW_OPTIMIZATION",
+                summary: "Triển khai không gian làm việc số hợp nhất để tối ưu hóa năng suất cộng tác nhóm từ xa. Dự án ứng dụng mô hình Agile/Kanban trên Notion kết hợp hệ thống giao tiếp Discord được phân luồng (channels) và tự động hóa bằng Webhook. Thể hiện năng lực giải quyết xung đột dữ liệu (Data Conflict) thông qua tính năng Suggesting và Version History trên Google Docs. Đồng thời, chuẩn hóa vòng đời dữ liệu trên Google Drive bằng kiến trúc thư mục đa cấp và quy tắc định danh nghiêm ngặt, đảm bảo tính toàn vẹn của dự án.",
+                process: [
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/1baitap4.png", // Chụp màn hình bảng Kanban Notion
+                        caption: "Quản trị luồng công việc (Workflow) bằng bảng Kanban trên Notion với hệ thống Label/Tag ưu tiên." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/2baitap4.png", // Chụp màn hình Version History trên Docs
+                        caption: "Giám sát phiên bản (Version Control) và giải quyết xung đột bằng Suggesting Mode trên Google Docs." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/3baitap4.png", // Chụp màn hình phân quyền & đặt tên file Drive
+                        caption: "Kiến trúc hóa không gian lưu trữ Drive với giao thức định danh tệp tin ba cấp độ." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/4baitap4.png", // Chụp màn hình Discord
+                        caption: "Tối ưu hóa băng thông giao tiếp với Discord Channels và tích hợp nhắc nhở tự động (Reminders)." 
+                    }
+                ],
+                fileName: "25022152_BaiTap4_Collaboration.docx", 
+                fileUrl: "https://raw.githubusercontent.com/Diin17/image/main/BaiTap4.docx" // Link tải file thực tế
+            },
+            {
+                id: "FILE_05", 
+                title: "Sáng tạo Tài nguyên Đa phương tiện với AI Tạo sinh", 
+                tags: "GENERATIVE_MEDIA | MULTIMEDIA_DESIGN | AI_INTEGRATION",
+                summary: "Minh chứng năng lực vận dụng AI tạo sinh (Generative AI) vào sản xuất tài nguyên đồ họa học thuật. Thực hiện đánh giá chéo hiệu năng của 3 nền tảng: Gemini (phân tích văn bản, lên cấu trúc Slide), DALL-E 3 (tạo hình ảnh minh họa trừu tượng) và Canva Magic Design (dàn trang tự động). Sản phẩm cốt lõi là bộ Slide thuyết trình về 'Phân rã và Trừu tượng hóa trong Tư duy máy tính' được tạo ra với tốc độ tối ưu. Dự án cũng bao hàm góc nhìn phản biện sâu sắc về giới hạn của AI (đặc biệt trong việc render sơ đồ khối kỹ thuật) và ranh giới đạo đức khi sử dụng AI hỗ trợ học tập.",
+                process: [
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/1baitap5.png", // Chụp đoạn chat với Gemini tạo dàn ý
+                        caption: "Đánh giá dựa trên các tiêu chí đối với các loại AI" 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/2baitap5.png", // Chụp đoạn chat với Gemini tạo dàn ý
+                        caption: "Sử dụng Gemini: Kỹ nghệ Prompt để thiết lập cấu trúc nội dung và kịch bản Slide." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/3baitap5.png", // Chụp đoạn prompt và ảnh của DALL-E
+                        caption: "Sử dụng DALL-E 3: Trích xuất Assets hình ảnh minh họa cho khái niệm 'Decomposition' và 'Abstraction'." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/4baitap5.png", // Chụp màn hình Slide Phân rã (Page 2 hoặc 3 trong PDF)
+                        caption: "Tích hợp AI: Layout hoàn thiện khái niệm 'Phân rã' (Decomposition) trên phần mềm thiết kế." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/5baitap5.png", // Chụp màn hình Slide Trừu tượng (Page 4 hoặc 5 trong PDF)
+                        caption: "Tích hợp AI: Tối ưu hóa thị giác cho khái niệm 'Trừu tượng hóa' (Abstraction) bằng hình ảnh AI sinh." 
+                    }
+                ],
+                fileName: "25022152_BaiTap5_CreativeAI.zip", 
+                fileUrl: "https://raw.githubusercontent.com/Diin17/image/main/BaiTap5.docx",
+                pdfName: "25022152_BaiTap5_CreativeAssets.pdf", 
+                pdfUrl: "https://raw.githubusercontent.com/Diin17/image/main/Ph%C3%A2n%20r%C3%A3%20v%C3%A0%20Tr%E1%BB%ABu%20t%C6%B0%E1%BB%A3ng%20h%C3%B3a%20trong%20CT.pdf"  
+            },
+            {
+                id: "FILE_06", 
+                title: "Đạo đức AI & Tuyên ngôn Liêm chính Học thuật", 
+                tags: "ETHICS_FIREWALL | ACADEMIC_INTEGRITY | ZERO_TRUST",
+                summary: "Module cuối cùng thiết lập hàng rào bảo vệ liêm chính học thuật trong kỷ nguyên Trí tuệ nhân tạo. Thông qua việc phân tích chính sách của UET và thực nghiệm giải thuật (bài toán tìm UCLN), dự án định hình rõ ranh giới kỹ thuật giữa 'hỗ trợ hợp lý' và 'gian lận'. Điểm cốt lõi là việc ban hành Bộ 5 nguyên tắc cá nhân, lấy giao thức 'Zero-Trust' (luôn xác thực chéo) và 'Minh bạch 100%' làm kim chỉ nam. Mục tiêu tối thượng là sử dụng AI như một trợ lý đắc lực, kiên quyết bảo vệ khả năng tư duy độc lập và kỹ năng problem-solving của một kỹ sư phần mềm tương lai.",
+                process: [
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/1baitap6.png", // Chụp đoạn phân tích chính sách ở phần I
+                        caption: "Mapping chính sách: Phân định ranh giới giữa hỗ trợ tư duy và gian lận học thuật." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/2baitap6.png", // Chụp đoạn code Python và phần phân tích
+                        caption: "Thực nghiệm kiểm soát AI: Trích xuất logic thuật toán nhưng tự tay tái cấu trúc mã nguồn." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/3baitap6.png", // Chụp phần III (Bản quyền, thui chột tư duy)
+                        caption: "Đánh giá rủi ro (Risk Assessment): Vấn đề bản quyền dữ liệu và hệ lụy 'ảo tưởng sức mạnh'." 
+                    },
+                    { 
+                        url: "https://raw.githubusercontent.com/Diin17/image/main/4baitap6.png", // Chụp cái ảnh Infographic cuối file Word
+                        caption: "Ban hành Manifesto: 5 nguyên tắc cốt lõi kiểm soát AI (AI là trợ thủ, Zero-Trust, Bảo mật, Tự tư duy, Minh bạch)." 
+                    }
+                ],
+                fileName: "25022152_BaiTap6_EthicsManifesto.docx", 
+                fileUrl: "https://raw.githubusercontent.com/Diin17/image/main/BaiTap6.docx" // Link tải file thực tế của mày
+            }
+        ];
+
+        let currentIndex = 0;
+
+        function openProject(index) {
+            currentIndex = index;
+            const data = projectsData[index];
+            
+            document.getElementById('detail-id').innerText = data.id;
+            document.getElementById('detail-title').innerText = data.title;
+            document.getElementById('detail-tags').innerText = `[ ${data.tags} ]`;
+            
+            let galleryHTML = `
+                <div class="carousel-wrapper">
+                    <button id="slider-prev-btn" class="slider-btn prev-btn hidden-btn" onclick="slideGallery(-1)"></button>
+                    <div class="carousel-track" id="current-carousel" onscroll="handleSliderScroll()">
+            `;
+            data.process.forEach(img => {
+                galleryHTML += `
+                    <div class="gallery-item" onclick="openLightbox('${img.url}', '${img.caption}')">
+                        <div class="img-wrapper"><img src="${img.url}" alt="Process Image"></div>
+                        <div class="img-caption">> ${img.caption}</div>
+                    </div>
+                `;
+            });
+            galleryHTML += `
+                    </div>
+                    <button id="slider-next-btn" class="slider-btn next-btn" onclick="slideGallery(1)"></button>
+                </div>
+            `;
+
+            // --- XỬ LÝ LOGIC ĐỘNG CHO PHẦN FILE ---
+            let fileSectionHTML = '';
+
+            // Nếu bài đó CÓ khai báo link PDF (như Bài 5) -> Render 2 nút
+            if (data.pdfUrl) {
+                fileSectionHTML = `
+                    <div class="file-zone" style="margin-bottom: 15px;">
+                        <div class="file-meta">
+                            <span class="file-icon">📄</span>
+                            <div style="text-align: left;">
+                                <div class="file-name">${data.fileName}</div>
+                                <div class="file-status">GIAO THỨC: FILE NGUỒN GỐC (EDITABLE)</div>
+                            </div>
+                        </div>
+                        <a href="${data.fileUrl}" class="cyber-btn" target="_blank">DOWNLOAD</a>
+                    </div>
+                    <div class="file-zone">
+                        <div class="file-meta">
+                            <span class="file-icon">📕</span>
+                            <div style="text-align: left;">
+                                <div class="file-name">${data.pdfName}</div>
+                                <div class="file-status">GIAO THỨC: BẢN BÁO CÁO CHÍNH THỨC (READ-ONLY)</div>
+                            </div>
+                        </div>
+                        <a href="${data.pdfUrl}" class="cyber-btn btn-main" target="_blank">DOWNLOAD</a>
+                    </div>
+                `;
+            } 
+            // Nếu bài đó KHÔNG khai báo link PDF (các bài 1, 2, 3, 4, 6) -> Render 1 nút chuẩn
+            else {
+                fileSectionHTML = `
+                    <div class="file-zone">
+                        <div class="file-meta">
+                            <span class="file-icon">📄</span>
+                            <div style="text-align: left;">
+                                <div class="file-name">${data.fileName}</div>
+                                <div class="file-status">GIAO THỨC: SẴN SÀNG TRUY XUẤT (SECURE)</div>
+                            </div>
+                        </div>
+                        <a href="${data.fileUrl}" class="cyber-btn" target="_blank">DOWNLOAD</a>
+                    </div>
+                `;
+            }
+
+            let htmlContent = `
+                <div class="detail-section">
+                    <h4 class="section-sub-title">> [01] SUMMARY_LOG // TÓM TẮT & PHÂN TÍCH CHUYÊN SÂU</h4>
+                    <div class="content-block">${data.summary}</div>
+                </div>
+                <div class="detail-section">
+                    <h4 class="section-sub-title">> [02] PROCESS_VISUAL // QUY TRÌNH THỰC THI</h4>
+                    ${galleryHTML}
+                </div>
+                <div class="detail-section">
+                    <h4 class="section-sub-title">> [03] ATTACHED_FILE // TRÍCH XUẤT MINH CHỨNG SẢN PHẨM</h4>
+                    ${fileSectionHTML}
+                </div>
+            `;
+            
+            document.getElementById('detail-content').innerHTML = htmlContent;
+            document.getElementById('btn-prev').classList.toggle('btn-disabled', index === 0);
+            document.getElementById('btn-next').classList.toggle('btn-disabled', index === projectsData.length - 1);
+
+            document.getElementById('grid-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'block';
+            window.scrollTo(0, 0);
+
+            setTimeout(handleSliderScroll, 50);
+        }
+
+        function closeProject() {
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('grid-view').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function navigate(step) {
+            let newIndex = currentIndex + step;
+            if (newIndex >= 0 && newIndex < projectsData.length) openProject(newIndex);
+        }
+
+        function handleSliderScroll() {
+            const track = document.getElementById('current-carousel');
+            if (!track) return;
+
+            const prevBtn = document.getElementById('slider-prev-btn');
+            const nextBtn = document.getElementById('slider-next-btn');
+            if (prevBtn && nextBtn) {
+                if (track.scrollLeft <= 10) prevBtn.classList.add('hidden-btn');
+                else prevBtn.classList.remove('hidden-btn');
+
+                if (Math.ceil(track.scrollLeft + track.clientWidth) >= track.scrollWidth - 10) nextBtn.classList.add('hidden-btn');
+                else nextBtn.classList.remove('hidden-btn');
+            }
+
+            const trackRect = track.getBoundingClientRect();
+            const trackCenter = trackRect.left + trackRect.width / 2;
+            
+            const items = track.querySelectorAll('.gallery-item');
+            let minDistance = Infinity;
+            let centerItem = null;
+            
+            items.forEach(item => {
+                const rect = item.getBoundingClientRect();
+                const itemCenter = rect.left + rect.width / 2;
+                const distance = Math.abs(trackCenter - itemCenter);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    centerItem = item;
+                }
+            });
+            
+            items.forEach(item => {
+                if (item === centerItem) {
+                    item.classList.add('is-center');
+                } else {
+                    item.classList.remove('is-center');
+                }
+            });
+        }
+
+        function slideGallery(direction) {
+            const track = document.getElementById('current-carousel');
+            const itemWidth = track.querySelector('.gallery-item').offsetWidth;
+            const gap = 30;
+            track.scrollBy({ left: direction * (itemWidth + gap), behavior: 'smooth' });
+        }
+
+        function openLightbox(imgSrc, caption) {
+            document.getElementById('lightbox-img').src = imgSrc;
+            document.getElementById('lightbox-caption').innerText = `> ${caption}`;
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            setTimeout(() => { document.getElementById('lightbox-img').src = ''; }, 300);
+        }
+        document.getElementById('lightbox').addEventListener('click', function(e) {
+            if (e.target === this) closeLightbox();
+        });
+
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*<>?'.split('');
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.06)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00f3ff';
+            ctx.font = fontSize + 'px Fira Code';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>
